@@ -1,6 +1,7 @@
 // Minimal in-memory game state, keyed by room.
 // For a mini project this is fine — for production you'd move this to Redis too.
 const games = {};
+const rpsGames = {};
 
 function checkWinner(board) {
   const lines = [
@@ -17,17 +18,27 @@ function checkWinner(board) {
   return null;
 }
 
+function resolveRPS(id1, choice1, id2, choice2) {
+  if (choice1 === choice2) return "draw";
+  const beats = { rock: "scissors", paper: "rock", scissors: "paper" };
+  return beats[choice1] === choice2 ? id1 : id2;
+}
+
 export function registerGameHandlers(io, socket) {
   socket.on("startGame", ({ room }) => {
-    games[room] = {
-      board: Array(9).fill(null),
-      turn: "X",
-      players: {}, // maps socket.userId -> "X" or "O"
-    };
+    if (!games[room]) {
+      games[room] = {
+        board: Array(9).fill(null),
+        turn: "X",
+        players: {},
+      };
+    }
 
     const game = games[room];
+
     if (!game.players[socket.userId]) {
-      const symbol = Object.keys(game.players).length === 0 ? "X" : "O";
+      const assignedSymbols = Object.values(game.players);
+      const symbol = assignedSymbols.includes("X") ? "O" : "X";
       game.players[socket.userId] = symbol;
     }
 
@@ -39,8 +50,8 @@ export function registerGameHandlers(io, socket) {
     if (!game) return;
 
     const symbol = game.players[socket.userId];
-    if (symbol !== game.turn) return; // not this player's turn
-    if (game.board[index] !== null) return; // cell already taken
+    if (symbol !== game.turn) return;
+    if (game.board[index] !== null) return;
 
     game.board[index] = symbol;
     const winner = checkWinner(game.board);
@@ -51,6 +62,38 @@ export function registerGameHandlers(io, socket) {
     if (winner) {
       io.to(room).emit("gameOver", { winner });
       delete games[room];
+    }
+  });
+
+  // ----- Rock-Paper-Scissors -----
+  socket.on("startRPS", ({ room }) => {
+    if (!rpsGames[room]) {
+      rpsGames[room] = { choices: {} };
+    }
+    io.to(room).emit("rpsStarted");
+  });
+
+  socket.on("makeRPSChoice", ({ room, choice }) => {
+    if (!rpsGames[room]) rpsGames[room] = { choices: {} };
+    const game = rpsGames[room];
+    game.choices[socket.userId] = choice;
+
+    const playerIds = Object.keys(game.choices);
+
+    io.to(room).emit("rpsWaiting", { playersReady: playerIds.length });
+
+    if (playerIds.length === 2) {
+      const [id1, id2] = playerIds;
+      const choice1 = game.choices[id1];
+      const choice2 = game.choices[id2];
+      const result = resolveRPS(id1, choice1, id2, choice2);
+
+      io.to(room).emit("rpsResult", {
+        choices: { [id1]: choice1, [id2]: choice2 },
+        result,
+      });
+
+      delete rpsGames[room];
     }
   });
 }

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { connectSocket, getSocket } from "../socket";
 import { fetchMessages } from "../api";
 import { useAuth } from "../context/AuthContext.jsx";
+import TicTacToe from "../components/TicTacToe";
+import RockPaperScissors from "../components/RockPaperScissors";
 
 const ROOM = "test-room";
 
@@ -10,7 +12,9 @@ export default function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [ttl, setTtl] = useState("");
+  const [showGame, setShowGame] = useState(false);
   const bottomRef = useRef(null);
+  const [showRPS, setShowRPS] = useState(false);
 
   useEffect(() => {
     const socket = connectSocket(token);
@@ -52,6 +56,18 @@ export default function Chat() {
         Chat room — logged in as {user.username}{" "}
         <button onClick={logout} style={{ marginLeft: 10 }}>Log out</button>
       </h3>
+
+      <button onClick={() => setShowGame(!showGame)} style={{ marginBottom: 10 }}>
+        {showGame ? "Hide game" : "Play Tic-Tac-Toe"}
+      </button>
+
+      {showGame && <TicTacToe room={ROOM} onClose={() => setShowGame(false)} />}
+        <button onClick={() => setShowRPS(!showRPS)} style={{ marginBottom: 10, marginLeft: 8 }}>
+  {showRPS ? "Hide RPS" : "Play Rock-Paper-Scissors"}
+</button>
+
+{showRPS && <RockPaperScissors room={ROOM} onClose={() => setShowRPS(false)} />}
+
       <div style={{ border: "1px solid #ccc", height: 350, overflowY: "auto", padding: 10, marginBottom: 10 }}>
         {messages.map((m) => (
           <div key={m._id} style={{ marginBottom: 6 }}>

@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
+
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/messages.js";
 import { verifySocketToken } from "./middleware/auth.js";
@@ -36,6 +37,7 @@ io.on("connection", (socket) => {
 
   registerChatHandlers(io, socket);
   registerGameHandlers(io, socket);
+  
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
