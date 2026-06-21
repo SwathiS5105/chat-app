@@ -18,3 +18,15 @@ export async function fetchMessages(room, token) {
   });
   return res.data;
 }
+export async function fetchUsers(token) {
+  const res = await axios.get(`${API_URL}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
+export async function fetchUserById(id, token) {
+  const res = await axios.get(`${API_URL}/users/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}

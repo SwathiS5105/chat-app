@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { connectSocket, getSocket } from "../socket";
-import { fetchMessages } from "../api";
 import { useAuth } from "../context/AuthContext.jsx";
 import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
-
-const ROOM = "test-room";
+import { fetchMessages, fetchUserById } from "../api";
 
 export default function Chat() {
   const { token, user, logout } = useAuth();
+  const { room } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [otherUser, setOtherUser] = useState(location.state?.otherUser || null);
+
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [ttl, setTtl] = useState("");
@@ -20,9 +24,13 @@ export default function Chat() {
 
   useEffect(() => {
     const socket = connectSocket(token);
-    socket.emit("joinRoom", ROOM);
+    socket.emit("joinRoom", room);
+    if (!otherUser) {
+  const otherId = room.split("_").find((id) => id !== user.id);
+  if (otherId) fetchUserById(otherId, token).then(setOtherUser);
+}
 
-    fetchMessages(ROOM, token).then(setMessages);
+    fetchMessages(room, token).then(setMessages);
 
     socket.on("newMessage", (msg) => {
       setMessages((prev) => [...prev, msg]);
@@ -31,7 +39,6 @@ export default function Chat() {
     socket.on("userTyping", ({ username }) => {
       setTypingUser(username);
 
-      // Clear the indicator after 2 seconds of no new typing events
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
         setTypingUser(null);
@@ -43,7 +50,7 @@ export default function Chat() {
     });
 
     return () => socket.disconnect();
-  }, [token]);
+  }, [token, room]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,7 +61,7 @@ export default function Chat() {
     if (!input.trim()) return;
 
     getSocket().emit("sendMessage", {
-      room: ROOM,
+      room,
       content: input,
       ttlSeconds: ttl ? Number(ttl) : null,
     });
@@ -67,9 +74,20 @@ export default function Chat() {
       <div className="w-full max-w-lg bg-white rounded-xl shadow-md flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <div>
-            <p className="text-sm text-gray-500">Logged in as</p>
-            <p className="font-semibold text-gray-800">{user.username}</p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/contacts")}
+              className="text-gray-400 hover:text-gray-700 transition text-lg"
+              title="Back to contacts"
+            >
+              ←
+            </button>
+            <div>
+              <p className="text-sm text-gray-500">Chatting with</p>
+              <p className="font-semibold text-gray-800">
+                {otherUser?.username || "Unknown user"}
+              </p>
+            </div>
           </div>
           <button
             onClick={logout}
@@ -97,12 +115,12 @@ export default function Chat() {
 
         {showGame && (
           <div className="px-5 pt-3">
-            <TicTacToe room={ROOM} onClose={() => setShowGame(false)} />
+            <TicTacToe room={room} onClose={() => setShowGame(false)} />
           </div>
         )}
         {showRPS && (
           <div className="px-5 pt-3">
-            <RockPaperScissors room={ROOM} onClose={() => setShowRPS(false)} />
+            <RockPaperScissors room={room} onClose={() => setShowRPS(false)} />
           </div>
         )}
 
@@ -150,7 +168,7 @@ export default function Chat() {
             value={input}
             onChange={(e) => {
               setInput(e.target.value);
-              getSocket().emit("typing", { room: ROOM, username: user.username });
+              getSocket().emit("typing", { room, username: user.username });
             }}
             placeholder="Type a message..."
             className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
