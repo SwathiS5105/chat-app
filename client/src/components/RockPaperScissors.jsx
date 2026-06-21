@@ -47,32 +47,39 @@ export default function RockPaperScissors({ room, onClose }) {
   }
 
   return (
-    <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16, marginBottom: 12, background: "#fff" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        <strong>Rock Paper Scissors</strong>
-        <button onClick={onClose} style={{ cursor: "pointer" }}>✕</button>
+    <div className="border border-gray-200 rounded-xl p-4 mb-3 bg-white shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-semibold text-gray-800">✊ Rock Paper Scissors</span>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-700 transition text-lg leading-none"
+        >
+          ✕
+        </button>
       </div>
 
       {!result && (
         <>
-          <p style={{ textAlign: "center" }}>
+          <p className="text-center text-sm text-gray-600 mb-3">
             {myChoice ? "Waiting for opponent..." : "Pick your move:"}
           </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 10 }}>
+          <div className="flex justify-center gap-3">
             {CHOICES.map((c) => (
               <button
                 key={c.value}
                 onClick={() => handleChoice(c.value)}
                 disabled={!!myChoice}
-                style={{
-                  fontSize: 32,
-                  padding: 10,
-                  cursor: myChoice ? "default" : "pointer",
-                  opacity: myChoice && myChoice !== c.value ? 0.4 : 1,
-                  border: myChoice === c.value ? "2px solid #333" : "1px solid #ccc",
-                  borderRadius: 8,
-                  background: "#fafafa",
-                }}
+                className={`text-3xl w-16 h-16 flex items-center justify-center rounded-xl border transition ${
+                  myChoice === c.value
+                    ? "border-blue-500 bg-blue-50"
+                    : "border-gray-200 bg-gray-50"
+                } ${
+                  myChoice && myChoice !== c.value
+                    ? "opacity-40"
+                    : myChoice
+                    ? ""
+                    : "hover:bg-gray-100 cursor-pointer"
+                }`}
               >
                 {c.emoji}
               </button>
@@ -82,9 +89,12 @@ export default function RockPaperScissors({ room, onClose }) {
       )}
 
       {result && (
-        <div style={{ textAlign: "center" }}>
-          <p style={{ fontSize: 20 }}>{getOutcomeText()}</p>
-          <button onClick={playAgain} style={{ marginTop: 8 }}>
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-800">{getOutcomeText()}</p>
+          <button
+            onClick={playAgain}
+            className="mt-3 text-sm bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition"
+          >
             Play again
           </button>
         </div>

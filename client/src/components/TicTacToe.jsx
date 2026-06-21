@@ -39,53 +39,45 @@ export default function TicTacToe({ room, onClose }) {
   }
 
   return (
-    <div
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 12,
-        background: "#fff",
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-        <strong>Tic-Tac-Toe</strong>
-        <button onClick={onClose} style={{ cursor: "pointer" }}>✕</button>
+    <div className="border border-gray-200 rounded-xl p-4 mb-3 bg-white shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-semibold text-gray-800">🎮 Tic-Tac-Toe</span>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-700 transition text-lg leading-none"
+        >
+          ✕
+        </button>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 60px)",
-          gridTemplateRows: "repeat(3, 60px)",
-          gap: 4,
-          margin: "0 auto",
-        }}
-      >
+      <div className="grid grid-cols-3 gap-1.5 w-fit mx-auto">
         {board.map((cell, i) => (
-          <div
+          <button
             key={i}
             onClick={() => handleCellClick(i)}
-            style={{
-              border: "1px solid #999",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 28,
-              cursor: cell || winner ? "default" : "pointer",
-              background: "#fafafa",
-            }}
+            disabled={!!cell || !!winner}
+            className={`w-16 h-16 flex items-center justify-center text-2xl font-bold rounded-lg border transition ${
+              cell || winner
+                ? "cursor-default"
+                : "cursor-pointer hover:bg-gray-100"
+            } ${
+              cell === "X"
+                ? "text-blue-600 border-gray-200 bg-gray-50"
+                : cell === "O"
+                ? "text-rose-500 border-gray-200 bg-gray-50"
+                : "border-gray-200 bg-gray-50"
+            }`}
           >
             {cell}
-          </div>
+          </button>
         ))}
       </div>
 
-      <p style={{ textAlign: "center", marginTop: 10 }}>
+      <p className="text-center mt-3 text-sm font-medium text-gray-600">
         {winner
           ? winner === "draw"
             ? "It's a draw!"
-            : `${winner} wins!`
+            : `${winner} wins! 🎉`
           : `Turn: ${turn}`}
       </p>
     </div>
