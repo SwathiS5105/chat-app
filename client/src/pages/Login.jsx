@@ -16,7 +16,7 @@ export default function Login() {
     try {
       const data = await loginApi(username, password);
       login(data.token, data.user);
-      navigate("/chat");
+      navigate("/contacts");
     } catch (err) {
       setError(err.response?.data?.error || "Something went wrong");
     }

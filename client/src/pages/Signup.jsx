@@ -17,7 +17,7 @@ export default function Signup() {
     try {
       const data = await signupApi(username, email, password);
       login(data.token, data.user);
-      navigate("/chat");
+      navigate("/contacts");
     } catch (err) {
       setError(err.response?.data?.error || "Something went wrong");
     }
