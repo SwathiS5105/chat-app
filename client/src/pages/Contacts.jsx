@@ -23,7 +23,7 @@ export default function Contacts() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center sm:px-4 sm:py-8">
       <div className="w-full max-w-md bg-white rounded-xl shadow-md overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div>

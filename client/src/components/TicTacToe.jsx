@@ -56,7 +56,7 @@ export default function TicTacToe({ room, onClose }) {
             key={i}
             onClick={() => handleCellClick(i)}
             disabled={!!cell || !!winner}
-            className={`w-16 h-16 flex items-center justify-center text-2xl font-bold rounded-lg border transition ${
+            className={`w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-xl sm:text-2xl font-bold rounded-lg border transition ${
               cell || winner
                 ? "cursor-default"
                 : "cursor-pointer hover:bg-gray-100"

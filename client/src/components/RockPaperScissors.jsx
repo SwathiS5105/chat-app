@@ -69,7 +69,7 @@ export default function RockPaperScissors({ room, onClose }) {
                 key={c.value}
                 onClick={() => handleChoice(c.value)}
                 disabled={!!myChoice}
-                className={`text-3xl w-16 h-16 flex items-center justify-center rounded-xl border transition ${
+                className={`text-2xl sm:text-3xl w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center rounded-xl border transition ${
                   myChoice === c.value
                     ? "border-blue-500 bg-blue-50"
                     : "border-gray-200 bg-gray-50"

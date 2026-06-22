@@ -70,8 +70,8 @@ export default function Chat() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow-md flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center sm:px-4 sm:py-8">
+  <div className="w-full max-w-lg h-screen sm:h-auto bg-white sm:rounded-xl shadow-md flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export default function Chat() {
         )}
 
         {/* Messages */}
-        <div className="flex-1 h-96 overflow-y-auto px-5 py-4 space-y-3 bg-gray-50">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-3 bg-gray-50">
           {messages.map((m) => {
             const isMine = m.sender?.username === user.username;
             return (
