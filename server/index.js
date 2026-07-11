@@ -4,32 +4,53 @@ import http from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 import cors from "cors";
-import dotenv from "dotenv";
-import userRoutes from "./routes/users.js";
-
 
 import authRoutes from "./routes/auth.js";
 import messageRoutes from "./routes/messages.js";
+import userRoutes from "./routes/users.js";
 import { verifySocketToken } from "./middleware/auth.js";
 import { registerChatHandlers } from "./sockets/chatHandlers.js";
 import { registerGameHandlers } from "./sockets/gameHandlers.js";
 import { startDeleteWorker } from "./jobs/deleteMessageQueue.js";
 
-dotenv.config();
-
 const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL }));
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+}));
+
 app.use(express.json());
-app.use("/api/users", userRoutes);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => res.send("Chat app server is running"));
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
-  cors: { origin: process.env.CLIENT_URL },
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  },
 });
 
 io.use(verifySocketToken);
@@ -39,7 +60,6 @@ io.on("connection", (socket) => {
 
   registerChatHandlers(io, socket);
   registerGameHandlers(io, socket);
-  
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
