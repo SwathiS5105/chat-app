@@ -5,8 +5,6 @@ import { generateAIResponse } from "../services/gemini.js";
 const GEMINI_BOT_ID = process.env.GEMINI_BOT_ID;
 
 export function registerChatHandlers(io, socket) {
-  
-
   socket.on("joinRoom", (room) => {
     socket.join(room);
   });
@@ -31,17 +29,34 @@ export function registerChatHandlers(io, socket) {
 
       // Check if this is a chat with GeminiBot
       const roomIds = room.split("_");
-      
-      
-      
-
       const isGeminiRoom = GEMINI_BOT_ID && roomIds.includes(GEMINI_BOT_ID);
 
       if (isGeminiRoom) {
         io.to(room).emit("userTyping", { username: "GeminiBot" });
 
         try {
-          const aiReply = await generateAIResponse(content);
+          // Fetch last 10 messages for context
+          const history = await Message.find({
+            room,
+            deleted: false,
+            content: { $ne: "" },
+          })
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .populate("sender", "username");
+
+          // Reverse so oldest is first
+          history.reverse();
+
+          // Build conversation history in Groq's format
+          const conversationMessages = history.map((msg) => ({
+            role: msg.sender._id.toString() === GEMINI_BOT_ID
+              ? "assistant"
+              : "user",
+            content: msg.content,
+          }));
+
+          const aiReply = await generateAIResponse(conversationMessages);
 
           const botMessage = await Message.create({
             room,
@@ -53,7 +68,7 @@ export function registerChatHandlers(io, socket) {
           const populatedBot = await botMessage.populate("sender", "username");
           io.to(room).emit("newMessage", populatedBot);
         } catch (aiErr) {
-          console.error("Gemini error:", aiErr.message);
+          console.error("Groq error:", aiErr.message);
 
           const errMessage = await Message.create({
             room,
