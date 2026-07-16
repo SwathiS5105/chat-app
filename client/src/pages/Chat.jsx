@@ -6,6 +6,45 @@ import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
 import { fetchMessages, fetchUserById } from "../api";
 
+function ChatrixLogo({ size = 28 }) {
+  return (
+    <svg viewBox="0 0 64 64" width={size} height={size}>
+      <rect x="0" y="0" width="64" height="64" rx="18" fill="#0F0E2A" />
+      <circle cx="26" cy="28" r="20" fill="#6C63FF" opacity="0.15" />
+      <rect x="6" y="12" width="34" height="26" rx="10" fill="#6C63FF" />
+      <polygon points="8,38 20,38 12,50" fill="#6C63FF" />
+      <polygon points="42,8 32,30 40,30 30,56 52,24 42,24" fill="#FFD700" />
+      <polygon points="42,8 32,30 40,30 30,56 52,24 42,24" fill="none" stroke="#FFF0A0" strokeWidth="0.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function DateDivider({ label }) {
+  return (
+    <div className="flex items-center gap-3 my-3">
+      <div className="flex-1 h-px bg-gray-200" />
+      <span className="text-xs text-gray-400 font-medium px-2 whitespace-nowrap">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-gray-200" />
+    </div>
+  );
+}
+
+function getDateLabel(dateStr) {
+  const msgDate = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (msgDate.toDateString() === today.toDateString()) return "Today";
+  if (msgDate.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return msgDate.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function Chat() {
   const { token, user, logout } = useAuth();
   const { room } = useParams();
@@ -22,13 +61,16 @@ export default function Chat() {
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  const isAIChat = otherUser?.username === "GeminiBot";
+
   useEffect(() => {
     const socket = connectSocket(token);
     socket.emit("joinRoom", room);
+
     if (!otherUser) {
-  const otherId = room.split("_").find((id) => id !== user.id);
-  if (otherId) fetchUserById(otherId, token).then(setOtherUser);
-}
+      const otherId = room.split("_").find((id) => id !== user.id);
+      if (otherId) fetchUserById(otherId, token).then(setOtherUser);
+    }
 
     fetchMessages(room, token).then(setMessages);
 
@@ -38,11 +80,8 @@ export default function Chat() {
 
     socket.on("userTyping", ({ username }) => {
       setTypingUser(username);
-
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        setTypingUser(null);
-      }, 2000);
+      typingTimeoutRef.current = setTimeout(() => setTypingUser(null), 2000);
     });
 
     socket.on("messageDeleted", ({ messageId }) => {
@@ -59,93 +98,127 @@ export default function Chat() {
   function handleSend(e) {
     e.preventDefault();
     if (!input.trim()) return;
-
     getSocket().emit("sendMessage", {
       room,
       content: input,
       ttlSeconds: ttl ? Number(ttl) : null,
     });
-
     setInput("");
   }
 
+  let lastDateLabel = null;
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center sm:px-4 sm:py-8">
-  <div className="w-full max-w-lg h-screen sm:h-auto bg-white sm:rounded-xl shadow-md flex flex-col overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center sm:px-4 sm:py-8" style={{ background: "#0F0E2A" }}>
+      <div className="w-full max-w-lg h-screen sm:h-auto bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/contacts")}
-              className="text-gray-400 hover:text-gray-700 transition text-lg"
-              title="Back to contacts"
-            >
-              ←
-            </button>
-            <div>
-              <p className="text-sm text-gray-500">Chatting with</p>
-              <p className="font-semibold text-gray-800">
-                {otherUser?.username || "Unknown user"}
-              </p>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100" style={{ background: "#0F0E2A" }}>
+          <button
+            onClick={() => navigate("/contacts")}
+            className="text-lg transition"
+            style={{ color: "#6C63FF" }}
+            title="Back to contacts"
+          >
+            ←
+          </button>
+
+          {isAIChat ? (
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0" style={{ background: "#1E1D3A" }}>
+              ⚡
             </div>
+          ) : (
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 text-white" style={{ background: "#6C63FF" }}>
+              {otherUser?.username?.[0]?.toUpperCase() || "?"}
+            </div>
+          )}
+
+          <div className="flex-1">
+            <p className="font-bold text-white text-sm leading-tight">
+              {otherUser?.username || "Unknown user"}
+            </p>
+            <p className="text-xs" style={{ color: "#6C63FF" }}>
+              {isAIChat ? "AI · Always online" : "ChatriX"}
+            </p>
           </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowGame(!showGame); setShowRPS(false); }}
+              className="text-xs px-3 py-1.5 rounded-full transition"
+              style={{ background: showGame ? "#6C63FF" : "#1E1D3A", color: showGame ? "#fff" : "#A78BFF" }}
+            >
+              🎮
+            </button>
+            <button
+              onClick={() => { setShowRPS(!showRPS); setShowGame(false); }}
+              className="text-xs px-3 py-1.5 rounded-full transition"
+              style={{ background: showRPS ? "#6C63FF" : "#1E1D3A", color: showRPS ? "#fff" : "#A78BFF" }}
+            >
+              ✊
+            </button>
+          </div>
+
           <button
             onClick={logout}
-            className="text-sm text-gray-500 hover:text-red-500 transition"
+            className="text-xs transition ml-1"
+            style={{ color: "#6C63FF" }}
           >
-            Log out
-          </button>
-        </div>
-
-        {/* Game toggles */}
-        <div className="flex gap-2 px-5 py-3 border-b border-gray-200 bg-gray-50">
-          <button
-            onClick={() => setShowGame(!showGame)}
-            className="text-sm px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition"
-          >
-            {showGame ? "Hide Tic-Tac-Toe" : "🎮 Tic-Tac-Toe"}
-          </button>
-          <button
-            onClick={() => setShowRPS(!showRPS)}
-            className="text-sm px-3 py-1.5 rounded-full border border-gray-300 hover:bg-gray-100 transition"
-          >
-            {showRPS ? "Hide RPS" : "✊ Rock-Paper-Scissors"}
+            Out
           </button>
         </div>
 
         {showGame && (
-          <div className="px-5 pt-3">
+          <div className="px-4 pt-3">
             <TicTacToe room={room} onClose={() => setShowGame(false)} />
           </div>
         )}
         {showRPS && (
-          <div className="px-5 pt-3">
+          <div className="px-4 pt-3">
             <RockPaperScissors room={room} onClose={() => setShowRPS(false)} />
           </div>
         )}
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-3 bg-gray-50">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ background: "#FAFAFE" }}>
           {messages.map((m) => {
             const isMine = m.sender?.username === user.username;
+            const isBot = m.sender?.username === "GeminiBot";
+            const dateLabel = getDateLabel(m.createdAt);
+            const showDivider = lastDateLabel !== dateLabel;
+            lastDateLabel = dateLabel;
+
             return (
-              <div
-                key={m._id}
-                className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-2xl text-sm ${
-                    isMine
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm"
-                  }`}
-                >
+              <div key={m._id}>
+                {showDivider && <DateDivider label={dateLabel} />}
+                <div className={`flex items-end gap-2 ${isMine ? "justify-end" : "justify-start"}`}>
                   {!isMine && (
-                    <p className="text-xs font-semibold text-gray-500 mb-0.5">
-                      {m.sender?.username || "?"}
-                    </p>
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mb-1"
+                      style={{ background: isBot ? "#0F0E2A" : "#6C63FF", color: isBot ? "#FFD700" : "#fff" }}
+                    >
+                      {isBot ? "⚡" : m.sender?.username?.[0]?.toUpperCase() || "?"}
+                    </div>
                   )}
-                  {m.content}
+                  <div
+                    className="max-w-xs px-4 py-2.5 text-sm"
+                    style={{
+                      borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
+                      background: isMine ? "#6C63FF" : isBot ? "#0F0E2A" : "#fff",
+                      color: isMine || isBot ? "#fff" : "#111",
+                      border: (!isMine && !isBot) ? "0.5px solid #e5e5e5" : "none",
+                    }}
+                  >
+                    {!isMine && !isBot && (
+                      <p className="text-xs font-semibold mb-0.5" style={{ color: "#6C63FF" }}>
+                        {m.sender?.username || "?"}
+                      </p>
+                    )}
+                    {m.content}
+                    <p className="text-right mt-1" style={{ fontSize: "9px", opacity: 0.6 }}>
+                      {new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
@@ -154,15 +227,21 @@ export default function Chat() {
         </div>
 
         {typingUser && typingUser !== user.username && (
-          <p className="text-xs text-gray-400 px-5 pb-1 italic">
-            {typingUser} is typing...
-          </p>
+          <div className="px-5 py-1 flex items-center gap-2">
+            <div className="flex gap-1">
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#6C63FF", animationDelay: "0ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#6C63FF", animationDelay: "150ms" }} />
+              <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "#6C63FF", animationDelay: "300ms" }} />
+            </div>
+            <p className="text-xs text-gray-400 italic">{typingUser} is typing</p>
+          </div>
         )}
 
         {/* Input */}
         <form
           onSubmit={handleSend}
-          className="flex items-center gap-2 px-5 py-4 border-t border-gray-200"
+          className="flex items-center gap-2 px-4 py-3 border-t border-gray-100"
+          style={{ background: "#fff" }}
         >
           <input
             value={input}
@@ -170,26 +249,32 @@ export default function Chat() {
               setInput(e.target.value);
               getSocket().emit("typing", { room, username: user.username });
             }}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            placeholder={isAIChat ? "Ask GeminiBot anything..." : "Type a message..."}
+            className="flex-1 px-4 py-2.5 text-sm rounded-full border focus:outline-none"
+            style={{ background: "#F5F4FF", border: "1.5px solid #E8E7FF", color: "#111" }}
           />
           <select
             value={ttl}
             onChange={(e) => setTtl(e.target.value)}
-            className="text-sm border border-gray-300 rounded-full px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="text-xs rounded-full px-2 py-2 focus:outline-none border"
+            style={{ background: "#F5F4FF", border: "1.5px solid #E8E7FF", color: "#6C63FF" }}
           >
-            <option value="">Never delete</option>
-            <option value="10">10 sec</option>
-            <option value="60">1 min</option>
-            <option value="3600">1 hour</option>
+            <option value="">∞</option>
+            <option value="10">10s</option>
+            <option value="60">1m</option>
+            <option value="3600">1h</option>
           </select>
           <button
             type="submit"
-            className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition"
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition"
+            style={{ background: "#6C63FF" }}
           >
-            Send
+            <svg viewBox="0 0 16 16" width="15" height="15" fill="none">
+              <path d="M2 8h10M9 4l4 4-4 4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </button>
         </form>
+
       </div>
     </div>
   );

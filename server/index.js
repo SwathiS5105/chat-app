@@ -53,16 +53,42 @@ const io = new Server(server, {
   },
 });
 
+// Track online users: Map of userId -> Set of socketIds
+// (one user can have multiple tabs open)
+const onlineUsers = new Map();
+
 io.use(verifySocketToken);
 
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id, "user:", socket.userId);
+
+  // Add this socket to the user's set
+  if (!onlineUsers.has(socket.userId)) {
+    onlineUsers.set(socket.userId, new Set());
+  }
+  onlineUsers.get(socket.userId).add(socket.id);
+
+  // Broadcast updated online users list to everyone
+  io.emit("onlineUsers", Array.from(onlineUsers.keys()));
 
   registerChatHandlers(io, socket);
   registerGameHandlers(io, socket);
 
   socket.on("disconnect", () => {
     console.log("Socket disconnected:", socket.id);
+
+    // Remove this socket from the user's set
+    if (onlineUsers.has(socket.userId)) {
+      onlineUsers.get(socket.userId).delete(socket.id);
+
+      // If no more sockets for this user, remove them entirely
+      if (onlineUsers.get(socket.userId).size === 0) {
+        onlineUsers.delete(socket.userId);
+      }
+    }
+
+    // Broadcast updated online users list
+    io.emit("onlineUsers", Array.from(onlineUsers.keys()));
   });
 });
 
