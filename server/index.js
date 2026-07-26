@@ -12,6 +12,7 @@ import { verifySocketToken } from "./middleware/auth.js";
 import { registerChatHandlers } from "./sockets/chatHandlers.js";
 import { registerGameHandlers } from "./sockets/gameHandlers.js";
 import { startDeleteWorker } from "./jobs/deleteMessageQueue.js";
+import { registerQuizHandlers } from "./sockets/quizHandlers.js";
 
 const app = express();
 
@@ -60,6 +61,7 @@ const onlineUsers = new Map();
 io.use(verifySocketToken);
 
 io.on("connection", (socket) => {
+  registerQuizHandlers(io, socket);
   console.log("Socket connected:", socket.id, "user:", socket.userId);
 
   // Add this socket to the user's set

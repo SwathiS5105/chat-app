@@ -54,7 +54,7 @@ export default function Login() {
               Chatri<span style={{ color: "#6C63FF" }}>X</span>
             </h1>
             <p className="text-xs mt-1 font-medium tracking-widest" style={{ color: "#6C63FF" }}>
-              CONNECT · PLAY · CHAT
+              CHAT · PLAY · LEARN
             </p>
           </div>
         </div>

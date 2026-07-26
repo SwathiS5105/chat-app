@@ -4,20 +4,8 @@ import { connectSocket, getSocket } from "../socket";
 import { useAuth } from "../context/AuthContext.jsx";
 import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
+import Quiz from "../components/Quiz";
 import { fetchMessages, fetchUserById } from "../api";
-
-function ChatrixLogo({ size = 28 }) {
-  return (
-    <svg viewBox="0 0 64 64" width={size} height={size}>
-      <rect x="0" y="0" width="64" height="64" rx="18" fill="#0F0E2A" />
-      <circle cx="26" cy="28" r="20" fill="#6C63FF" opacity="0.15" />
-      <rect x="6" y="12" width="34" height="26" rx="10" fill="#6C63FF" />
-      <polygon points="8,38 20,38 12,50" fill="#6C63FF" />
-      <polygon points="42,8 32,30 40,30 30,56 52,24 42,24" fill="#FFD700" />
-      <polygon points="42,8 32,30 40,30 30,56 52,24 42,24" fill="none" stroke="#FFF0A0" strokeWidth="0.8" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function DateDivider({ label }) {
   return (
@@ -57,11 +45,12 @@ export default function Chat() {
   const [ttl, setTtl] = useState("");
   const [showGame, setShowGame] = useState(false);
   const [showRPS, setShowRPS] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const isAIChat = otherUser?.username === "GeminiBot";
+  const isAIChat = otherUser?.username === "StudyBot";
 
   useEffect(() => {
     const socket = connectSocket(token);
@@ -138,24 +127,34 @@ export default function Chat() {
               {otherUser?.username || "Unknown user"}
             </p>
             <p className="text-xs" style={{ color: "#6C63FF" }}>
-              {isAIChat ? "AI · Always online" : "ChatriX"}
+              {isAIChat ? "AI Study Assistant · Always online" : "ChatriX EDU"}
             </p>
           </div>
 
           <div className="flex gap-2">
             <button
-              onClick={() => { setShowGame(!showGame); setShowRPS(false); }}
+              onClick={() => { setShowGame(!showGame); setShowRPS(false); setShowQuiz(false); }}
               className="text-xs px-3 py-1.5 rounded-full transition"
               style={{ background: showGame ? "#6C63FF" : "#1E1D3A", color: showGame ? "#fff" : "#A78BFF" }}
+              title="Tic-Tac-Toe"
             >
               🎮
             </button>
             <button
-              onClick={() => { setShowRPS(!showRPS); setShowGame(false); }}
+              onClick={() => { setShowRPS(!showRPS); setShowGame(false); setShowQuiz(false); }}
               className="text-xs px-3 py-1.5 rounded-full transition"
               style={{ background: showRPS ? "#6C63FF" : "#1E1D3A", color: showRPS ? "#fff" : "#A78BFF" }}
+              title="Rock Paper Scissors"
             >
               ✊
+            </button>
+            <button
+              onClick={() => { setShowQuiz(!showQuiz); setShowGame(false); setShowRPS(false); }}
+              className="text-xs px-3 py-1.5 rounded-full transition"
+              style={{ background: showQuiz ? "#FFD700" : "#1E1D3A", color: showQuiz ? "#0F0E2A" : "#A78BFF" }}
+              title="Quiz Challenge"
+            >
+              🎓
             </button>
           </div>
 
@@ -168,6 +167,7 @@ export default function Chat() {
           </button>
         </div>
 
+        {/* Game panels */}
         {showGame && (
           <div className="px-4 pt-3">
             <TicTacToe room={room} onClose={() => setShowGame(false)} />
@@ -178,12 +178,17 @@ export default function Chat() {
             <RockPaperScissors room={room} onClose={() => setShowRPS(false)} />
           </div>
         )}
+        {showQuiz && (
+          <div className="px-4 pt-3">
+            <Quiz room={room} onClose={() => setShowQuiz(false)} />
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ background: "#FAFAFE" }}>
           {messages.map((m) => {
             const isMine = m.sender?.username === user.username;
-            const isBot = m.sender?.username === "GeminiBot";
+            const isBot = m.sender?.username === "StudyBot";
             const dateLabel = getDateLabel(m.createdAt);
             const showDivider = lastDateLabel !== dateLabel;
             lastDateLabel = dateLabel;
@@ -249,7 +254,7 @@ export default function Chat() {
               setInput(e.target.value);
               getSocket().emit("typing", { room, username: user.username });
             }}
-            placeholder={isAIChat ? "Ask GeminiBot anything..." : "Type a message..."}
+            placeholder={isAIChat ? "Ask StudyBot anything..." : "Type a message..."}
             className="flex-1 px-4 py-2.5 text-sm rounded-full border focus:outline-none"
             style={{ background: "#F5F4FF", border: "1.5px solid #E8E7FF", color: "#111" }}
           />
