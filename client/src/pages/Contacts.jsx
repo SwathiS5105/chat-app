@@ -142,6 +142,23 @@ export default function Contacts() {
           </div>
         </div>
 
+        {/* Navigation tabs */}
+        <div className="flex" style={{ borderBottom: "1px solid #f0f0f0" }}>
+          <button
+            className="flex-1 py-3 text-xs font-semibold border-b-2"
+            style={{ color: "#6C63FF", borderColor: "#6C63FF" }}
+          >
+            👤 Contacts
+          </button>
+          <button
+            onClick={() => navigate("/rooms")}
+            className="flex-1 py-3 text-xs font-semibold transition"
+            style={{ color: "#aaa", borderBottom: "2px solid transparent" }}
+          >
+            🏛️ Study Rooms
+          </button>
+        </div>
+
         {/* Contact list */}
         <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
           {filtered.length === 0 && (
@@ -181,7 +198,6 @@ export default function Contacts() {
                       {u.username[0].toUpperCase()}
                     </div>
                   )}
-                  {/* Online dot */}
                   {(isBot || isOnline) && (
                     <div
                       className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
@@ -222,7 +238,7 @@ export default function Contacts() {
           style={{ background: "#FAFAFE", borderTop: "0.5px solid #f0f0f0" }}
         >
           <p className="text-xs text-gray-400">
-            {users.length} contact{users.length !== 1 ? "s" : ""} · ChatriX
+            {users.length} contact{users.length !== 1 ? "s" : ""} · ChatriX EDU
           </p>
         </div>
 

@@ -4,6 +4,8 @@ import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Chat from "./pages/Chat.jsx";
 import Contacts from "./pages/Contacts.jsx";
+import Rooms from "./pages/Rooms.jsx";
+
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -13,6 +15,7 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   const { user } = useAuth();
   return (
+    
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
@@ -32,6 +35,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+  path="/rooms"
+  element={
+    <ProtectedRoute>
+      <Rooms />
+    </ProtectedRoute>
+  }
+/>s
       <Route path="/" element={<Navigate to={user ? "/contacts" : "/login"} />} />
     </Routes>
   );

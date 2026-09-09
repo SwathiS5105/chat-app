@@ -3,8 +3,16 @@ import { getSocket } from "../socket";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const SUBJECTS = [
-  "Mathematics", "Physics", "Chemistry", "Biology",
-  "Computer Science", "History", "Literature", "Economics"
+  "Python Programming",
+  "Java Programming",
+  "Data Structures",
+  "Algorithms",
+  "Database Management",
+  "Computer Networks",
+  "Operating Systems",
+  "Web Technologies",
+  "Software Engineering",
+  "Artificial Intelligence",
 ];
 
 export default function Quiz({ room, onClose }) {

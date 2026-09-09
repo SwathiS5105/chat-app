@@ -6,6 +6,7 @@ import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
 import Quiz from "../components/Quiz";
 import { fetchMessages, fetchUserById } from "../api";
+import { encryptMessage, decryptMessage } from "../crypto";
 
 function DateDivider({ label }) {
   return (
@@ -51,6 +52,7 @@ export default function Chat() {
   const typingTimeoutRef = useRef(null);
 
   const isAIChat = otherUser?.username === "StudyBot";
+  const isRoomChat = location.state?.isRoom || false;
 
   useEffect(() => {
     const socket = connectSocket(token);
@@ -85,15 +87,15 @@ export default function Chat() {
   }, [messages]);
 
   function handleSend(e) {
-    e.preventDefault();
-    if (!input.trim()) return;
-    getSocket().emit("sendMessage", {
-      room,
-      content: input,
-      ttlSeconds: ttl ? Number(ttl) : null,
-    });
-    setInput("");
-  }
+  e.preventDefault();
+  if (!input.trim()) return;
+  getSocket().emit("sendMessage", {
+    room,
+    content: encryptMessage(input),
+    ttlSeconds: ttl ? Number(ttl) : null,
+  });
+  setInput("");
+}
 
   let lastDateLabel = null;
 
@@ -127,7 +129,7 @@ export default function Chat() {
               {otherUser?.username || "Unknown user"}
             </p>
             <p className="text-xs" style={{ color: "#6C63FF" }}>
-              {isAIChat ? "AI Study Assistant · Always online" : "ChatriX EDU"}
+              {isAIChat ? "AI Study Assistant · Always online" : isRoomChat ? "CS Study Room · Group Chat" : "ChatriX EDU"}
             </p>
           </div>
 
@@ -219,7 +221,7 @@ export default function Chat() {
                         {m.sender?.username || "?"}
                       </p>
                     )}
-                    {m.content}
+                    {decryptMessage(m.content)}
                     <p className="text-right mt-1" style={{ fontSize: "9px", opacity: 0.6 }}>
                       {new Date(m.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                     </p>
@@ -254,7 +256,7 @@ export default function Chat() {
               setInput(e.target.value);
               getSocket().emit("typing", { room, username: user.username });
             }}
-            placeholder={isAIChat ? "Ask StudyBot anything..." : "Type a message..."}
+            placeholder={isAIChat ? "Ask StudyBot anything..." : isRoomChat ? "Chat with the group..." : "Type a message..."}
             className="flex-1 px-4 py-2.5 text-sm rounded-full border focus:outline-none"
             style={{ background: "#F5F4FF", border: "1.5px solid #E8E7FF", color: "#111" }}
           />

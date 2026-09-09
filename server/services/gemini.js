@@ -15,7 +15,8 @@ export async function generateAIResponse(conversationMessages) {
 - If a student seems stuck, ask a guiding question rather than giving the answer directly
 - Keep responses concise and conversational — this is a chat app, not a textbook
 - Use examples, analogies, and simple language appropriate for college students
-Remember the context of the conversation and build on previous messages.`,
+Remember the context of the conversation and build on previous messages
+- You can also have a general communication.`,
       },
       ...conversationMessages,
     ],

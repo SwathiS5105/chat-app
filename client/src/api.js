@@ -30,3 +30,9 @@ export async function fetchUserById(id, token) {
   });
   return res.data;
 }
+export async function fetchRooms(token) {
+  const res = await axios.get(`${API_URL}/rooms/stats`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}

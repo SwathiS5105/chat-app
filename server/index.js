@@ -13,7 +13,8 @@ import { registerChatHandlers } from "./sockets/chatHandlers.js";
 import { registerGameHandlers } from "./sockets/gameHandlers.js";
 import { startDeleteWorker } from "./jobs/deleteMessageQueue.js";
 import { registerQuizHandlers } from "./sockets/quizHandlers.js";
-
+import roomRoutes from "./routes/rooms.js";
+app.use("/api/rooms", roomRoutes);
 const app = express();
 
 const allowedOrigins = [
@@ -31,6 +32,7 @@ app.use(cors({
     }
   },
 }));
+
 
 app.use(express.json());
 
