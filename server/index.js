@@ -14,7 +14,7 @@ import { registerGameHandlers } from "./sockets/gameHandlers.js";
 import { startDeleteWorker } from "./jobs/deleteMessageQueue.js";
 import { registerQuizHandlers } from "./sockets/quizHandlers.js";
 import roomRoutes from "./routes/rooms.js";
-app.use("/api/rooms", roomRoutes);
+
 const app = express();
 
 const allowedOrigins = [
@@ -22,6 +22,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   process.env.CLIENT_URL,
 ].filter(Boolean);
+app.use("/api/rooms", roomRoutes);
 
 app.use(cors({
   origin: (origin, callback) => {
