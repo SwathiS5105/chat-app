@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchUsers } from "../api";
+import { fetchUsers } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { connectSocket } from "../socket";
 

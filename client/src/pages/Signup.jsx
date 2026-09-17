@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signup as signupApi } from "../api";
+import { signup as signupApi } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
 function ChatrixLogo({ size = 56 }) {

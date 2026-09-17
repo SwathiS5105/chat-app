@@ -1,6 +1,5 @@
 import express from "express";
 import { verifyToken } from "../middleware/auth.js";
-import Message from "../models/Message.js";
 
 const router = express.Router();
 
@@ -17,27 +16,13 @@ const ROOMS = [
   { id: "room_ai", name: "Artificial Intelligence", icon: "🤖" },
 ];
 
-// Get all rooms
 router.get("/", verifyToken, (req, res) => {
   res.json(ROOMS);
 });
 
-// Get recent message count per room
-router.get("/stats", verifyToken, async (req, res) => {
-  try {
-    const stats = await Promise.all(
-      ROOMS.map(async (room) => {
-        const count = await Message.countDocuments({
-          room: room.id,
-          deleted: false,
-        });
-        return { ...room, messageCount: count };
-      })
-    );
-    res.json(stats);
-  } catch (err) {
-    res.status(500).json({ error: "Could not fetch room stats" });
-  }
+// Return rooms with messageCount as 0 — no DB query needed
+router.get("/stats", verifyToken, (req, res) => {
+  res.json(ROOMS.map((r) => ({ ...r, messageCount: 0 })));
 });
 
 export default router;

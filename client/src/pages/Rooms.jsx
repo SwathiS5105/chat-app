@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchRooms } from "../api";
+import { fetchRooms } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { connectSocket } from "../socket";
 

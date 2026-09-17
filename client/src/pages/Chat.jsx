@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
 import Quiz from "../components/Quiz";
-import { fetchMessages, fetchUserById } from "../api";
+import { fetchMessages, fetchUserById } from "../api.js";
 import { encryptMessage, decryptMessage } from "../crypto";
 
 function DateDivider({ label }) {
