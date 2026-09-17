@@ -22,7 +22,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   process.env.CLIENT_URL,
 ].filter(Boolean);
-app.use("/api/rooms", roomRoutes);
+
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -40,6 +40,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/rooms", roomRoutes);
 
 app.get("/", (req, res) => res.send("Chat app server is running"));
 
