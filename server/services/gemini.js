@@ -24,7 +24,7 @@ Remember the context of the conversation and build on previous messages.`;
       { role: "system", content: systemPrompt },
       ...conversationMessages,
     ],
-    model: "llama-3.1-8b-instant",
+    model: "llama3-8b-8192",
   });
 
   return completion.choices[0].message.content;
