@@ -1,6 +1,7 @@
 import Message from "../models/Message.js";
 import { scheduleDeletion } from "../jobs/deleteMessageQueue.js";
 import { generateAIResponse } from "../services/gemini.js";
+import { decryptMessage } from "../utils/crypto.js";
 
 const GEMINI_BOT_ID = process.env.GEMINI_BOT_ID;
 
@@ -56,7 +57,7 @@ export function registerChatHandlers(io, socket) {
             role: msg.sender._id.toString() === GEMINI_BOT_ID
               ? "assistant"
               : "user",
-            content: msg.content,
+            content: decryptMessage(msg.content),
           }));
 
           // For study rooms, extract subject from room ID and pass as context
