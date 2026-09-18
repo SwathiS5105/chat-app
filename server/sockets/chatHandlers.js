@@ -27,12 +27,15 @@ export function registerChatHandlers(io, socket) {
         await scheduleDeletion(message._id.toString(), ttlSeconds * 1000);
       }
 
-      // Check if this is a chat with GeminiBot
+      // Check if this is a 1:1 chat with StudyBot
       const roomIds = room.split("_");
       const isGeminiRoom = GEMINI_BOT_ID && roomIds.includes(GEMINI_BOT_ID);
 
-      if (isGeminiRoom) {
-        io.to(room).emit("userTyping", { username: "GeminiBot" });
+      // Check if this is a named study room (e.g. room_python, room_java)
+      const isStudyRoom = room.startsWith("room_");
+
+      if (isGeminiRoom || isStudyRoom) {
+        io.to(room).emit("userTyping", { username: "StudyBot" });
 
         try {
           // Fetch last 10 messages for context
@@ -56,7 +59,12 @@ export function registerChatHandlers(io, socket) {
             content: msg.content,
           }));
 
-          const aiReply = await generateAIResponse(conversationMessages);
+          // For study rooms, extract subject from room ID and pass as context
+          const subject = isStudyRoom
+            ? room.replace("room_", "").replace(/_/g, " ")
+            : null;
+
+          const aiReply = await generateAIResponse(conversationMessages, subject);
 
           const botMessage = await Message.create({
             room,
@@ -68,7 +76,7 @@ export function registerChatHandlers(io, socket) {
           const populatedBot = await botMessage.populate("sender", "username");
           io.to(room).emit("newMessage", populatedBot);
         } catch (aiErr) {
-          console.error("Groq error:", aiErr.message);
+          console.error("AI error:", aiErr.message);
 
           const errMessage = await Message.create({
             room,

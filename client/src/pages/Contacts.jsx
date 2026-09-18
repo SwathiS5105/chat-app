@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchUsers } from "../api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { connectSocket } from "../socket";
+import { decryptMessage } from "../crypto";
 
 function getRoomId(id1, id2) {
   return [id1, id2].sort().join("_");
@@ -210,9 +211,13 @@ export default function Contacts() {
                   <p className="font-semibold text-sm text-gray-900 truncate">
                     {u.username}
                   </p>
-                  <p className="text-xs truncate" style={{ color: isBot ? "#6C63FF" : isOnline ? "#4CAF50" : "#aaa" }}>
-                    {isBot ? "AI assistant · Always online" : isOnline ? "Online" : u.email}
-                  </p>
+                  <p className="text-xs truncate" style={{ color: isBot ? "#6C63FF" : "#aaa" }}>
+  {isBot
+    ? "AI assistant · Always online"
+    : u.lastMessage
+    ? `${u.lastMessage.senderUsername === user.username ? "You: " : ""}${decryptMessage(u.lastMessage.content)}`
+    : isOnline ? "Online" : u.email}
+</p>
                 </div>
 
                 {isBot && (
