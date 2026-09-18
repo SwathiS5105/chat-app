@@ -24,7 +24,7 @@ Remember the context of the conversation and build on previous messages.`;
       { role: "system", content: systemPrompt },
       ...conversationMessages,
     ],
-    model: "llama3-8b-8192",
+    model: "openai/gpt-oss-20b",
   });
 
   return completion.choices[0].message.content;
