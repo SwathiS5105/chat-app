@@ -2,16 +2,22 @@ import Message from "../models/Message.js";
 import { scheduleDeletion } from "../jobs/deleteMessageQueue.js";
 import { generateAIResponse } from "../services/gemini.js";
 import { decryptMessage } from "../utils/crypto.js";
-
-const GEMINI_BOT_ID = process.env.GEMINI_BOT_ID;
+import { parseRoom, canAccessRoom, getBotId } from "../utils/rooms.js";
 
 export function registerChatHandlers(io, socket) {
   socket.on("joinRoom", (room) => {
+    // Only the room's owner / members may join it
+    if (!canAccessRoom(room, socket.userId)) return;
     socket.join(room);
   });
 
   socket.on("sendMessage", async ({ room, content, ttlSeconds }, callback) => {
     try {
+      if (!canAccessRoom(room, socket.userId)) {
+        if (callback) callback({ success: false, error: "Not allowed in this room" });
+        return;
+      }
+
       const expiresAt = ttlSeconds ? new Date(Date.now() + ttlSeconds * 1000) : null;
 
       const message = await Message.create({
@@ -28,18 +34,21 @@ export function registerChatHandlers(io, socket) {
         await scheduleDeletion(message._id.toString(), ttlSeconds * 1000);
       }
 
-      // Check if this is a 1:1 chat with StudyBot
-      const roomIds = room.split("_");
-      const isGeminiRoom = GEMINI_BOT_ID && roomIds.includes(GEMINI_BOT_ID);
+      // Decide whether StudyBot should reply
+      const parsed = parseRoom(room);
+      const botId = await getBotId();
+      const isBotChat = parsed?.type === "direct" && botId && parsed.ids.includes(botId);
+      const isStudyRoom = parsed?.type === "study";
 
-      // Check if this is a named study room (e.g. room_python, room_java)
-      const isStudyRoom = room.startsWith("room_");
+      if ((isBotChat || isStudyRoom) && !botId) {
+        console.error("StudyBot user not found — cannot generate AI reply");
+      }
 
-      if (isGeminiRoom || isStudyRoom) {
+      if ((isBotChat || isStudyRoom) && botId) {
         io.to(room).emit("userTyping", { username: "StudyBot" });
 
         try {
-          // Fetch last 10 messages for context
+          // Last 10 messages of THIS room only (rooms are private per user)
           const history = await Message.find({
             room,
             deleted: false,
@@ -49,27 +58,19 @@ export function registerChatHandlers(io, socket) {
             .limit(10)
             .populate("sender", "username");
 
-          // Reverse so oldest is first
           history.reverse();
 
-          // Build conversation history in Groq's format
           const conversationMessages = history.map((msg) => ({
-            role: msg.sender._id.toString() === GEMINI_BOT_ID
-              ? "assistant"
-              : "user",
+            role: msg.sender?._id?.toString() === botId ? "assistant" : "user",
             content: decryptMessage(msg.content),
           }));
 
-          // For study rooms, extract subject from room ID and pass as context
-          const subject = isStudyRoom
-            ? room.replace("room_", "").replace(/_/g, " ")
-            : null;
-
+          const subject = isStudyRoom ? parsed.subject : null;
           const aiReply = await generateAIResponse(conversationMessages, subject);
 
           const botMessage = await Message.create({
             room,
-            sender: GEMINI_BOT_ID,
+            sender: botId,
             content: aiReply,
             expiresAt: null,
           });
@@ -81,7 +82,7 @@ export function registerChatHandlers(io, socket) {
 
           const errMessage = await Message.create({
             room,
-            sender: GEMINI_BOT_ID,
+            sender: botId,
             content: "Sorry, I'm having trouble responding right now. Please try again in a moment.",
             expiresAt: null,
           });
@@ -99,6 +100,7 @@ export function registerChatHandlers(io, socket) {
   });
 
   socket.on("typing", ({ room, username }) => {
+    if (!canAccessRoom(room, socket.userId)) return;
     socket.to(room).emit("userTyping", { username });
   });
 }

@@ -1,10 +1,12 @@
 import { generateQuizQuestion, evaluateAnswer } from "../services/quiz.js";
+import { isUserToUserRoom } from "../utils/rooms.js";
 
 const quizGames = {};
 
 export function registerQuizHandlers(io, socket) {
 
   socket.on("startQuiz", async ({ room, subject }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     if (!quizGames[room]) {
       quizGames[room] = {
         subject,
@@ -31,6 +33,7 @@ export function registerQuizHandlers(io, socket) {
   });
 
   socket.on("joinQuiz", async ({ room }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     const game = quizGames[room];
     if (!game) return;
 
@@ -45,6 +48,7 @@ export function registerQuizHandlers(io, socket) {
   });
 
   socket.on("submitAnswer", async ({ room, answer }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     const game = quizGames[room];
     if (!game || !game.waitingForAnswer) return;
 

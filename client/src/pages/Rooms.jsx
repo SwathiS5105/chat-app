@@ -39,7 +39,8 @@ export default function Rooms() {
   }, [token]);
 
   function openRoom(room) {
-    navigate(`/chat/${room.id}`, {
+    // Private room per user: room_<subject>_<userId>
+    navigate(`/chat/${room.id}_${user.id}`, {
       state: { otherUser: { username: room.name, _id: room.id }, isRoom: true },
     });
   }
@@ -160,7 +161,7 @@ export default function Rooms() {
                 <p className="text-xs" style={{ color: "#6C63FF" }}>
                   {room.messageCount > 0
                     ? `${room.messageCount} message${room.messageCount !== 1 ? "s" : ""}`
-                    : "No messages yet — start the discussion!"}
+                    : "No messages yet — ask your first question!"}
                 </p>
               </div>
 

@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
 import Quiz from "../components/Quiz";
-import { fetchMessages, fetchUserById } from "../api.js";
+import { fetchMessages, fetchUserById, fetchRooms } from "../api.js";
 import { encryptMessage, decryptMessage } from "../crypto";
 
 function DateDivider({ label }) {
@@ -52,15 +52,27 @@ export default function Chat() {
   const typingTimeoutRef = useRef(null);
 
   const isAIChat = otherUser?.username === "StudyBot";
-  const isRoomChat = location.state?.isRoom || false;
+  // Derived from the room id so it still works after a page refresh
+  const isRoomChat = room.startsWith("room_");
+  // Games are only for two real users — never with StudyBot or in study rooms
+  const canPlayGames = !!otherUser && !isAIChat && !isRoomChat;
 
   useEffect(() => {
     const socket = connectSocket(token);
     socket.emit("joinRoom", room);
 
     if (!otherUser) {
-      const otherId = room.split("_").find((id) => id !== user.id);
-      if (otherId) fetchUserById(otherId, token).then(setOtherUser);
+      if (room.startsWith("room_")) {
+        // Study room: room_<subject>_<userId> — look up the subject name
+        const base = room.split("_").slice(0, 2).join("_");
+        fetchRooms(token).then((list) => {
+          const found = list.find((r) => r.id === base);
+          if (found) setOtherUser({ username: found.name, _id: found.id });
+        });
+      } else {
+        const otherId = room.split("_").find((id) => id !== user.id);
+        if (otherId) fetchUserById(otherId, token).then(setOtherUser);
+      }
     }
 
     fetchMessages(room, token).then(setMessages);
@@ -97,8 +109,6 @@ export default function Chat() {
   setInput("");
 }
 
-  let lastDateLabel = null;
-
   return (
     <div className="min-h-screen flex items-center justify-center sm:px-4 sm:py-8" style={{ background: "#0F0E2A" }}>
       <div className="w-full max-w-lg h-screen sm:h-auto bg-white sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
@@ -129,10 +139,11 @@ export default function Chat() {
               {otherUser?.username || "Unknown user"}
             </p>
             <p className="text-xs" style={{ color: "#6C63FF" }}>
-              {isAIChat ? "AI Study Assistant · Always online" : isRoomChat ? "CS Study Room · Group Chat" : "ChatriX EDU"}
+              {isAIChat ? "AI Study Assistant · Always online" : isRoomChat ? "Private Study Room · Chat with StudyBot" : "ChatriX EDU"}
             </p>
           </div>
 
+          {canPlayGames && (
           <div className="flex gap-2">
             <button
               onClick={() => { setShowGame(!showGame); setShowRPS(false); setShowQuiz(false); }}
@@ -159,6 +170,7 @@ export default function Chat() {
               🎓
             </button>
           </div>
+          )}
 
           <button
             onClick={logout}
@@ -170,17 +182,17 @@ export default function Chat() {
         </div>
 
         {/* Game panels */}
-        {showGame && (
+        {canPlayGames && showGame && (
           <div className="px-4 pt-3">
             <TicTacToe room={room} onClose={() => setShowGame(false)} />
           </div>
         )}
-        {showRPS && (
+        {canPlayGames && showRPS && (
           <div className="px-4 pt-3">
             <RockPaperScissors room={room} onClose={() => setShowRPS(false)} />
           </div>
         )}
-        {showQuiz && (
+        {canPlayGames && showQuiz && (
           <div className="px-4 pt-3">
             <Quiz room={room} onClose={() => setShowQuiz(false)} />
           </div>
@@ -188,12 +200,12 @@ export default function Chat() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ background: "#FAFAFE" }}>
-          {messages.map((m) => {
+          {messages.map((m, i) => {
             const isMine = m.sender?.username === user.username;
             const isBot = m.sender?.username === "StudyBot";
             const dateLabel = getDateLabel(m.createdAt);
-            const showDivider = lastDateLabel !== dateLabel;
-            lastDateLabel = dateLabel;
+            // Compare with the previous message instead of reassigning a variable
+            const showDivider = i === 0 || getDateLabel(messages[i - 1].createdAt) !== dateLabel;
 
             return (
               <div key={m._id}>
@@ -208,8 +220,10 @@ export default function Chat() {
                     </div>
                   )}
                   <div
-                    className="max-w-xs px-4 py-2.5 text-sm"
+                    className="max-w-sm px-4 py-2.5 text-sm"
                     style={{
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
                       borderRadius: isMine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
                       background: isMine ? "#6C63FF" : isBot ? "#0F0E2A" : "#fff",
                       color: isMine || isBot ? "#fff" : "#111",
@@ -256,7 +270,7 @@ export default function Chat() {
               setInput(e.target.value);
               getSocket().emit("typing", { room, username: user.username });
             }}
-            placeholder={isAIChat ? "Ask StudyBot anything..." : isRoomChat ? "Chat with the group..." : "Type a message..."}
+            placeholder={isAIChat ? "Ask StudyBot anything..." : isRoomChat ? "Ask a question about this subject..." : "Type a message..."}
             className="flex-1 px-4 py-2.5 text-sm rounded-full border focus:outline-none"
             style={{ background: "#F5F4FF", border: "1.5px solid #E8E7FF", color: "#111" }}
           />

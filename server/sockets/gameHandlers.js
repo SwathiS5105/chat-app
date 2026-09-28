@@ -1,3 +1,5 @@
+import { isUserToUserRoom } from "../utils/rooms.js";
+
 // Minimal in-memory game state, keyed by room.
 // For a mini project this is fine — for production you'd move this to Redis too.
 const games = {};
@@ -25,7 +27,8 @@ function resolveRPS(id1, choice1, id2, choice2) {
 }
 
 export function registerGameHandlers(io, socket) {
-  socket.on("startGame", ({ room }) => {
+  socket.on("startGame", async ({ room }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     if (!games[room]) {
       games[room] = {
         board: Array(9).fill(null),
@@ -45,7 +48,8 @@ export function registerGameHandlers(io, socket) {
     io.to(room).emit("gameStarted", { board: game.board, turn: game.turn });
   });
 
-  socket.on("makeMove", ({ room, index }) => {
+  socket.on("makeMove", async ({ room, index }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     const game = games[room];
     if (!game) return;
 
@@ -66,14 +70,16 @@ export function registerGameHandlers(io, socket) {
   });
 
   // ----- Rock-Paper-Scissors -----
-  socket.on("startRPS", ({ room }) => {
+  socket.on("startRPS", async ({ room }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     if (!rpsGames[room]) {
       rpsGames[room] = { choices: {} };
     }
     io.to(room).emit("rpsStarted");
   });
 
-  socket.on("makeRPSChoice", ({ room, choice }) => {
+  socket.on("makeRPSChoice", async ({ room, choice }) => {
+    if (!(await isUserToUserRoom(room, socket.userId))) return;
     if (!rpsGames[room]) rpsGames[room] = { choices: {} };
     const game = rpsGames[room];
     game.choices[socket.userId] = choice;
