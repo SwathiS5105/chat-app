@@ -11,6 +11,7 @@ export function registerQuizHandlers(io, socket) {
       quizGames[room] = {
         subject,
         questions: [],
+        usedTopics: [],
         currentQuestion: 0,
         scores: {},
         players: [],
@@ -105,8 +106,11 @@ async function sendNextQuestion(io, room) {
   game.currentAnswerer = game.players[answererIndex];
   game.waitingForAnswer = true;
 
-  const q = await generateQuizQuestion(game.subject, game.currentQuestion + 1);
+  // Tell the generator what was already asked so every question is new
+  const asked = game.questions.map((x) => x.question);
+  const q = await generateQuizQuestion(game.subject, game.currentQuestion + 1, asked, game.usedTopics);
   game.questions.push(q);
+  if (q.topic) game.usedTopics.push(q.topic);
 
   // Tell everyone the question AND who should answer
   io.to(room).emit("quizQuestion", {
