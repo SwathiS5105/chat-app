@@ -172,7 +172,7 @@ export default function Contacts() {
           )}
 
           {filtered.map((u) => {
-            const isBot = u.username === "StudyBot";
+            const isBot = !!u.isBot || u.username === "StudyBot";
             const isOnline = onlineUserIds.includes(u._id);
             const color = getAvatarColor(u.username);
 

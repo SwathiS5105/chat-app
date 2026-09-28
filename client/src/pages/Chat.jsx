@@ -51,7 +51,7 @@ export default function Chat() {
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const isAIChat = otherUser?.username === "StudyBot";
+  const isAIChat = !!otherUser?.isBot || otherUser?.username === "StudyBot";
   // Derived from the room id so it still works after a page refresh
   const isRoomChat = room.startsWith("room_");
   // Games are only for two real users — never with StudyBot or in study rooms
@@ -202,7 +202,7 @@ export default function Chat() {
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ background: "#FAFAFE" }}>
           {messages.map((m, i) => {
             const isMine = m.sender?.username === user.username;
-            const isBot = m.sender?.username === "StudyBot";
+            const isBot = m.sender?.username === "StudyBot" || (!isMine && (isAIChat || isRoomChat));
             const dateLabel = getDateLabel(m.createdAt);
             // Compare with the previous message instead of reassigning a variable
             const showDivider = i === 0 || getDateLabel(messages[i - 1].createdAt) !== dateLabel;
