@@ -249,7 +249,17 @@ export default function Chat() {
               ) : (
                 deletedMsgs.map((m) => (
                   <div key={m._id} className="flex items-center justify-between gap-2 py-1.5" style={{ borderTop: "1px solid #E4E0FF" }}>
-                    <span className="flex-1 truncate text-gray-700">{decryptMessage(m.content)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-gray-700">{decryptMessage(m.content)}</p>
+                      {m.deletedAt && (
+                        <p className="text-xs text-gray-400">
+                          Deleted at{" "}
+                          {new Date(m.deletedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                          {" · "}
+                          {getDateLabel(m.deletedAt)}
+                        </p>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleRecover(m._id)}
                       className="text-xs px-3 py-1 rounded-full text-white flex-shrink-0"
