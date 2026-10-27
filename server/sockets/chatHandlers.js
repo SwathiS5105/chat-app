@@ -99,6 +99,41 @@ export function registerChatHandlers(io, socket) {
     }
   });
 
+  // Sender restores one of their own auto-deleted messages
+  socket.on("recoverMessage", async ({ room, messageId }, callback) => {
+    try {
+      if (!canAccessRoom(room, socket.userId)) {
+        if (callback) callback({ success: false, error: "Not allowed in this room" });
+        return;
+      }
+
+      const message = await Message.findOne({
+        _id: messageId,
+        room,
+        sender: socket.userId, // only the sender can recover
+        deleted: true,
+      });
+
+      if (!message || !message.content) {
+        if (callback) callback({ success: false, error: "This message cannot be recovered" });
+        return;
+      }
+
+      message.deleted = false;
+      message.deletedAt = null;
+      message.expiresAt = null; // recovered messages stay permanently
+      await message.save();
+
+      const populated = await message.populate("sender", "username");
+      io.to(room).emit("messageRecovered", populated);
+
+      if (callback) callback({ success: true });
+    } catch (err) {
+      console.error(err);
+      if (callback) callback({ success: false, error: "Could not recover message" });
+    }
+  });
+
   socket.on("typing", ({ room, username }) => {
     if (!canAccessRoom(room, socket.userId)) return;
     socket.to(room).emit("userTyping", { username });

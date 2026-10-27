@@ -7,6 +7,7 @@ const messageSchema = new mongoose.Schema(
     content: { type: String, required: true },
     expiresAt: { type: Date, default: null }, // null = never expires
     deleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null }, // when it auto-deleted (used for recovery)
   },
   { timestamps: true }
 );

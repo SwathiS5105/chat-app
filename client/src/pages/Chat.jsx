@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import TicTacToe from "../components/TicTacToe";
 import RockPaperScissors from "../components/RockPaperScissors";
 import Quiz from "../components/Quiz";
-import { fetchMessages, fetchUserById, fetchRooms } from "../api.js";
+import { fetchMessages, fetchUserById, fetchRooms, fetchDeletedMessages } from "../api.js";
 import { encryptMessage, decryptMessage } from "../crypto";
 
 function DateDivider({ label }) {
@@ -48,6 +48,8 @@ export default function Chat() {
   const [showRPS, setShowRPS] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deletedMsgs, setDeletedMsgs] = useState([]);
   const bottomRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
@@ -91,12 +93,37 @@ export default function Chat() {
       setMessages((prev) => prev.filter((m) => m._id !== messageId));
     });
 
+    // A message was recovered by its sender — show it again in its original position
+    socket.on("messageRecovered", (msg) => {
+      setMessages((prev) =>
+        prev.some((m) => m._id === msg._id)
+          ? prev
+          : [...prev, msg].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+      );
+    });
+
     return () => socket.disconnect();
   }, [token, room]);
+
+  // Load my auto-deleted messages while the panel is open (refreshes when a message deletes/recovers)
+  useEffect(() => {
+    if (!showDeleted) return;
+    fetchDeletedMessages(room, token).then(setDeletedMsgs).catch(() => setDeletedMsgs([]));
+  }, [showDeleted, room, token, messages.length]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  function handleRecover(messageId) {
+    getSocket().emit("recoverMessage", { room, messageId }, (res) => {
+      if (res?.success) {
+        setDeletedMsgs((prev) => prev.filter((m) => m._id !== messageId));
+      } else {
+        alert(res?.error || "Could not recover this message");
+      }
+    });
+  }
 
   function handleSend(e) {
   e.preventDefault();
@@ -142,6 +169,15 @@ export default function Chat() {
               {isAIChat ? "AI Study Assistant · Always online" : isRoomChat ? "Private Study Room · Chat with StudyBot" : "ChatriX EDU"}
             </p>
           </div>
+
+          <button
+            onClick={() => setShowDeleted(!showDeleted)}
+            className="text-xs px-3 py-1.5 rounded-full transition"
+            style={{ background: showDeleted ? "#6C63FF" : "#1E1D3A", color: showDeleted ? "#fff" : "#A78BFF" }}
+            title="Recently deleted messages"
+          >
+            🗑️
+          </button>
 
           {canPlayGames && (
           <div className="flex gap-2">
@@ -195,6 +231,36 @@ export default function Chat() {
         {canPlayGames && showQuiz && (
           <div className="px-4 pt-3">
             <Quiz room={room} onClose={() => setShowQuiz(false)} />
+          </div>
+        )}
+
+        {/* Recently auto-deleted messages (only the sender sees their own) */}
+        {showDeleted && (
+          <div className="px-4 pt-3">
+            <div className="rounded-xl p-3 text-sm" style={{ background: "#F3F1FF", border: "1px solid #D9D4FF" }}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-semibold text-xs" style={{ color: "#3C3489" }}>
+                  Recently auto-deleted — only you can see these
+                </p>
+                <button onClick={() => setShowDeleted(false)} className="text-xs text-gray-500">✕</button>
+              </div>
+              {deletedMsgs.length === 0 ? (
+                <p className="text-xs text-gray-400">No deleted messages to recover.</p>
+              ) : (
+                deletedMsgs.map((m) => (
+                  <div key={m._id} className="flex items-center justify-between gap-2 py-1.5" style={{ borderTop: "1px solid #E4E0FF" }}>
+                    <span className="flex-1 truncate text-gray-700">{decryptMessage(m.content)}</span>
+                    <button
+                      onClick={() => handleRecover(m._id)}
+                      className="text-xs px-3 py-1 rounded-full text-white flex-shrink-0"
+                      style={{ background: "#6C63FF" }}
+                    >
+                      Recover
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

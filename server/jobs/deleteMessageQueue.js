@@ -28,9 +28,11 @@ export function startDeleteWorker(io) {
     const message = await Message.findById(messageId);
     if (!message || message.deleted) return;
 
+    // Soft delete: hide the message but keep its (encrypted) content,
+    // so the sender can recover it later from "Recently deleted".
     await Message.findByIdAndUpdate(messageId, {
       deleted: true,
-      content: "",
+      deletedAt: new Date(),
     });
 
     // Tell both clients in that room to remove this message from their screen

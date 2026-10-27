@@ -18,6 +18,12 @@ export async function fetchMessages(room, token) {
   });
   return res.data;
 }
+export async function fetchDeletedMessages(room, token) {
+  const res = await axios.get(`${API_URL}/messages/${room}/deleted`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
+}
 export async function fetchUsers(token) {
   const res = await axios.get(`${API_URL}/users`, {
     headers: { Authorization: `Bearer ${token}` },
